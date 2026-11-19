@@ -1,0 +1,3 @@
+bb06f7735a9eeeaed4e8c0a90119e88d6c5076fb3bbec46330cf0f839aeb2696  models/gguf/smollm2-135m-bf16.gguf
+66489c8392750519b09e034df4315ff61b91f2cfaaa38a07d7e0b08da5abe6fa  models/gguf/smollm2-135m-f32.gguf
+0aef30b513e0cd57bad21a28785b38e8fef98f045356b29f0ee3f59657b98297  models/gguf/smollm2-135m-q8_0.gguf
