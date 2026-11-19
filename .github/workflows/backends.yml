@@ -76,37 +76,46 @@ jobs:
           sha256sum models/gguf/*.gguf | tee gguf.sha256
 
       - name: Run backends
+        continue-on-error: true
         run: |
+          set -o pipefail
+          mkdir -p logs
           python scripts/run_backends.py --ref data/ref/smollm2-135m --limit ${LIMIT} \
                  --driver ./llamacpp_driver \
                  --backends torch-cpu-fp32 torch-cpu-bf16 llamacpp-cpu-f32 llamacpp-cpu-f32-kvf32 \
-                            llamacpp-cpu-bf16 llamacpp-cpu-q8_0
+                            llamacpp-cpu-bf16 llamacpp-cpu-q8_0 2>&1 | tee logs/backends.log
 
       - name: fp64 numpy reference on this CPU
+        continue-on-error: true
         run: |
+          set -o pipefail
           python scripts/make_fp64_ref.py --out results/raw/ref/smollm2-135m/fp64-${{ matrix.runner }} \
-                 --limit ${LIMIT}
+                 --limit ${LIMIT} 2>&1 | tee logs/fp64.log
           python scripts/compare_refs.py data/ref/smollm2-135m results/raw/ref/smollm2-135m/fp64-${{ matrix.runner }} \
                  | tee -a $GITHUB_STEP_SUMMARY
 
       - name: Summarise
+        continue-on-error: true
         run: python scripts/summarize.py results/raw/runs/smollm2-135m/smollm2-135m | tee -a $GITHUB_STEP_SUMMARY
 
       - name: Push results to a branch
+        if: always()
         run: |
           B="ci-results/${GITHUB_REF_NAME//\//-}-${GITHUB_RUN_ID}/${{ matrix.runner }}"
-          mkdir -p /tmp/out && cp -r results/raw/runs cpuinfo.txt gguf.sha256 /tmp/out/
+          mkdir -p /tmp/out/runs && cp -r results/raw/runs/. /tmp/out/runs/ 2>/dev/null; cp -r logs cpuinfo.txt gguf.sha256 /tmp/out/ 2>/dev/null; true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan results-tmp && git rm -rq --cached . && git clean -fdq -e /tmp
-          cp -r /tmp/out/* . && git add -f runs cpuinfo.txt gguf.sha256
+          cp -r /tmp/out/* . ; for f in runs logs cpuinfo.txt gguf.sha256; do [ -e "$f" ] && git add -f "$f"; done
           git commit -qm "chore(ci): backend results for ${{ matrix.runner }}"
           git push origin "HEAD:refs/heads/$B"
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: runs-${{ matrix.runner }}
           path: |
             results/raw/runs
+            logs
             cpuinfo.txt
             gguf.sha256
