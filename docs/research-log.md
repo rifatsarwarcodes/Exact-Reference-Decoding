@@ -84,6 +84,24 @@ Full text of 2611.13730 and 2609.26621, abstracts of about 25 more, and about 16
 
 **Honest fp32 ensemble, single prompt:** median err_inf 1.4e-5, close to torch-cpu-fp32 and mlx-gpu-fp32. So those backends are consistent with honest fp32.
 
+### Honest-precision ensembles (run `ens-m8-v1`, 12 GitHub Actions shards)
+
+Summary: [../results/ensembles_smollm2-135m_v1.md](../results/ensembles_smollm2-135m_v1.md).
+
+| Profile | Member flips | Envelope (p99 abs err_dir) | Median err_inf |
+|---|---|---|---|
+| fp32 | **0 / 47,616** | 8.7e-6 | 1.2e-5 |
+| fp16 | 74 | 2.7e-2 | 3.3e-2 |
+| bf16 | 741 | 0.21 | 0.27 |
+
+- **Exact margins:** the minimum over 5,952 steps is 5.5e-5, and 0.47% of steps are below 1e-2. **Under honest fp32, no flip is expected on this set**, so fp32 backend flips are excess.
+- **Preview classification** (x86 smoke run, 3 prompts):
+  - torch-cpu-bf16: 8 flips, all legitimate (ensemble); ratio 1.1×.
+  - llama.cpp default f32: 1 flip at margin 3.3e-3, **excess**; ratio about 1,100×.
+- **Caveat:** llama.cpp "bf16" keeps activations in f32 and rounds only matmul inputs, so it needs its own profile. Added `bf16mm` (run `ens-m8-pbf16mm-v2`).
+- **First full local backend (M4):** torch-cpu-fp32 gave 0/5,952 teacher-forced flips and 0/93 diverged traces.
+- **Sweep speed-up:** when a free run never diverges, its logits are reused as the teacher-forced logits. They are the same calls on the same tokens.
+
 ### Repository
 - **Remote:** `git@github.com:rifatsarwarcodes/Exact-Reference-Decoding.git`, pushed through the SSH alias `github.com-rifatsarwarcodes`.
   - The repo appears **private**: the unauthenticated API returns 404.
