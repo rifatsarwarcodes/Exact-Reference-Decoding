@@ -31,6 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prompt limit (workflow input, or tag ci-n<N>-*)
+        run: |
+          if [[ "${GITHUB_REF_NAME}" =~ ^ci-n([0-9]+)- ]]; then echo "LIMIT=${BASH_REMATCH[1]}" >> $GITHUB_ENV; fi
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
