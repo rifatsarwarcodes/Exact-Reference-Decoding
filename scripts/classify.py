@@ -26,6 +26,8 @@ a = ap.parse_args()
 
 
 def profile_of(name: str) -> str:
+    if name.startswith("llamacpp") and "-bf16" in name:
+        return "bf16mm"            # ggml: bf16 weights, matmul inputs rounded to bf16, f32 elsewhere
     for p in ("fp32", "f32", "bf16", "fp16", "fp64", "q8_0"):
         if f"-{p}" in name:
             return {"f32": "fp32"}.get(p, p)
