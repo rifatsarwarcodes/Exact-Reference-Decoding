@@ -1,0 +1,11 @@
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 3567.73it/s]
+torch-cpu-fp32           prompts=93 tf-flips=0/5952 free-diverged=0/93
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 5574.62it/s]
+torch-cpu-bf16           prompts=93 tf-flips=103/5952 free-diverged=57/93
+llamacpp-cpu-f32         prompts=93 tf-flips=1/5952 free-diverged=1/93
+llamacpp-cpu-f32-kvf32   prompts=93 tf-flips=1/5952 free-diverged=1/93
+llamacpp-cpu-f32-faoff   prompts=93 tf-flips=1/5952 free-diverged=1/93
+llamacpp-cpu-f32-kvf32-faoff prompts=93 tf-flips=0/5952 free-diverged=0/93
+llamacpp-cpu-bf16-kvf32-faoff prompts=93 tf-flips=14/5952 free-diverged=12/93
+llamacpp-cpu-bf16        prompts=93 tf-flips=28/5952 free-diverged=26/93
+llamacpp-cpu-q8_0        prompts=93 tf-flips=150/5952 free-diverged=70/93
