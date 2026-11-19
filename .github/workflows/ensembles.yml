@@ -35,6 +35,8 @@ jobs:
         run: |
           M=8; if [[ "${GITHUB_REF_NAME}" =~ ^ens-m([0-9]+)- ]]; then M=${BASH_REMATCH[1]}; fi
           echo "MEMBERS=$M" >> $GITHUB_ENV
+          P="fp32 bf16 fp16"; if [[ "${GITHUB_REF_NAME}" =~ -p([a-z0-9]+)- ]]; then P=${BASH_REMATCH[1]}; fi
+          echo "PROFILES=$P" >> $GITHUB_ENV
       - name: Download model
         run: python -c "from huggingface_hub import snapshot_download; snapshot_download('HuggingFaceTB/SmolLM2-135M', revision='${MODEL_REV}', local_dir='models/SmolLM2-135M', allow_patterns=['*.json','*.safetensors','*.txt'])"
       - name: Run ensembles
@@ -42,7 +44,7 @@ jobs:
         run: |
           set -o pipefail; mkdir -p logs
           IDS=$(python -c "import glob,os; ids=sorted(os.path.basename(p)[:-4] for p in glob.glob('data/ref/smollm2-135m/*.npz')); print(' '.join(ids[${{ matrix.shard }}::${SHARDS}]))")
-          python scripts/run_ensemble.py --profiles fp32 bf16 fp16 --members ${MEMBERS} --ids $IDS \
+          python scripts/run_ensemble.py --profiles ${PROFILES} --members ${MEMBERS} --ids $IDS \
                  --out ens 2>&1 | tee logs/ensemble-${{ matrix.shard }}.log
       - name: Push results
         if: always()
