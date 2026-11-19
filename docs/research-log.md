@@ -56,6 +56,16 @@ Full text of 2611.13730 and 2609.26621, abstracts of about 25 more, and about 16
   - torch 2.15.0, transformers 5.23.0, mlx 0.32.4, mlx-lm 0.32.2;
   - numpy 2.4.6, python-flint 0.9.0, safetensors 0.8.0.
 
+### Repository
+- **Remote:** `git@github.com:rifatsarwarcodes/Exact-Reference-Decoding.git`, pushed through the SSH alias `github.com-rifatsarwarcodes`.
+  - The repo appears **private**: the unauthenticated API returns 404.
+  - Commits use the form `action(scope): message`, with no AI attribution, as the user instructed.
+  - Author: `Md. Rifat Sarwar <272023465+rifatsarwarcodes@users.noreply.github.com>`.
+- **CI:** pushing a tag `ci-*` starts the x86-64/ARM64 workflow; `ci-n<N>-*` limits it to N prompts. Each job pushes its results to `ci-results/<tag>-<run>/<runner>`.
+- **Smoke run:** tag `ci-n3-smoke1`.
+- **Open question:** ARM64 runners are free only for public repos, so the ARM job may not run while the repo is private.
+- **Data:** `data/ref/smollm2-135m/` (93 traces, 25 MB) currently holds **fp64 candidates, not certified** (`certified_prefix = -1`). They will be replaced once certification finishes.
+
 ### Next
 - [ ] Certify all 93 traces: background, about 12 min per trace, single process.
 - [ ] Full backend sweep: torch CPU/MPS × fp32/bf16/fp16, MLX GPU/CPU × fp32/bf16/fp16, llama.cpp CPU/Metal × f32/bf16/q8_0 × KV f16/f32.
