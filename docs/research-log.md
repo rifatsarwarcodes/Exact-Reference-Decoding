@@ -56,6 +56,34 @@ Full text of 2611.13730 and 2609.26621, abstracts of about 25 more, and about 16
   - torch 2.15.0, transformers 5.23.0, mlx 0.32.4, mlx-lm 0.32.2;
   - numpy 2.4.6, python-flint 0.9.0, safetensors 0.8.0.
 
+### Linux CI smoke runs and the llama.cpp ablation (afternoon)
+
+**CI smoke run** (`ci-n3-smoke3`): 3 prompts × 64 steps, on AMD EPYC 7763 (x86-64) and Neoverse-N2 (ARM64). The two architectures agree closely.
+
+| Backend | Median err_inf | Teacher-forced flips |
+|---|---|---|
+| torch-cpu-fp32 | 2.5–2.9e-5 | 0/192 |
+| torch-cpu-bf16 | 0.30 | 8/192 |
+| llama.cpp f32 (KV f16 or f32) | 1.3e-2 | 1/192 (exact margin 3.3e-3) |
+| llama.cpp bf16 | 0.10 | 0–1/192 |
+| llama.cpp q8_0 | 0.71–0.74 | 4–5/192 |
+
+**llama.cpp CPU f32 ablation** (M4, 3 prompts × 32 steps):
+
+| KV cache | Flash attention | Median err_inf |
+|---|---|---|
+| f16 | auto (default) | 1.50e-2 |
+| f32 | on | 1.50e-2 |
+| f16 | off | 1.13e-2 |
+| **f32** | **off** | **2.05e-5** |
+
+- **"auto" equals "on" on CPU.** The two settings give identical numbers.
+- **Both the CPU flash-attention path and the f16 KV cache each add about 1e-2 of error.** Only with both turned off is llama.cpp f32 at honest-fp32 level (the ensemble gives 1.4e-5).
+- **This corrects the morning hypothesis.** The KV cache alone does not explain the excess.
+- **Default llama.cpp "f32" is about 700× above honest fp32.** The cause is configuration, not a bug.
+
+**Honest fp32 ensemble, single prompt:** median err_inf 1.4e-5, close to torch-cpu-fp32 and mlx-gpu-fp32. So those backends are consistent with honest fp32.
+
 ### Repository
 - **Remote:** `git@github.com:rifatsarwarcodes/Exact-Reference-Decoding.git`, pushed through the SSH alias `github.com-rifatsarwarcodes`.
   - The repo appears **private**: the unauthenticated API returns 404.
