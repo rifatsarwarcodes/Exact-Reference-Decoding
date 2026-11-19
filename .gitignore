@@ -1,0 +1,12 @@
+.venv/
+models/
+results/raw/
+results/logs/
+third_party/
+data/raw/
+docs/related/pdfs/
+backends/llamacpp_driver
+__pycache__/
+*.pyc
+.DS_Store
+CLAUDE.md
