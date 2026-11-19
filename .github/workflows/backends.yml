@@ -83,6 +83,7 @@ jobs:
           python scripts/run_backends.py --ref data/ref/smollm2-135m --limit ${LIMIT} \
                  --driver ./llamacpp_driver \
                  --backends torch-cpu-fp32 torch-cpu-bf16 llamacpp-cpu-f32 llamacpp-cpu-f32-kvf32 \
+                            llamacpp-cpu-f32-faoff llamacpp-cpu-f32-kvf32-faoff llamacpp-cpu-bf16-kvf32-faoff \
                             llamacpp-cpu-bf16 llamacpp-cpu-q8_0 2>&1 | tee logs/backends.log
 
       - name: fp64 numpy reference on this CPU
