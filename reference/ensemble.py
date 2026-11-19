@@ -11,6 +11,8 @@ Profiles
   bf16 : activations stored in bf16 between ops (as HF/MLX bf16 do); matmul accumulation fp32;
          RMSNorm and softmax computed in fp32; logits rounded to bf16.
   fp16 : as bf16 but with float16 storage.
+  bf16mm : activations fp32 everywhere, but the *input* of every linear-layer matmul is rounded
+         to bf16 (ggml's vec_dot path for bf16 weights); accumulation fp32.
 """
 from __future__ import annotations
 
@@ -51,7 +53,7 @@ class HonestDecoder:
 
     # ---------------------------------------------------------------- storage rounding
     def st(self, x):
-        if self.profile == "fp32":
+        if self.profile in ("fp32", "bf16mm"):
             return x.astype(np.float32)
         if self.profile == "bf16":
             return _round_bf16(x)
@@ -63,6 +65,8 @@ class HonestDecoder:
     def mm(self, x, w):
         """x (..., n) @ w (n, k) in fp32 with random inner-dimension chunking/order."""
         n = w.shape[0]
+        if self.profile == "bf16mm":
+            x = _round_bf16(x)
         perm = self.rng.permutation(n)
         chunks = [perm[i:i + self.chunk] for i in range(0, n, self.chunk)]
         self.rng.shuffle(chunks)
