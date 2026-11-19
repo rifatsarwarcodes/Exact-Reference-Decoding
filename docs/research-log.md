@@ -56,6 +56,33 @@ Full text of 2611.13730 and 2609.26621, abstracts of about 25 more, and about 16
   - torch 2.15.0, transformers 5.23.0, mlx 0.32.4, mlx-lm 0.32.2;
   - numpy 2.4.6, python-flint 0.9.0, safetensors 0.8.0.
 
+### Full backend classification (late evening)
+
+Table: [../results/backends_smollm2-135m_v1.md](../results/backends_smollm2-135m_v1.md).
+
+**Runs.** Full CI run `ci-full-v1` on x86-64 (AMD EPYC 9V74) and ARM64 (Neoverse-N2), plus a partial local M4 sweep.
+- **fp32, honest:** torch-cpu-fp32 (all 3 platforms), mlx-gpu-fp32, mlx-cpu-fp32. 0 flips; 1.0–2.3× the honest error.
+- **bf16, flips legitimate:** torch-cpu-bf16, torch-mps-bf16, mlx-gpu-bf16. About 95–103 flips each, all but 0–1 legitimate; 1.1× honest bf16. llama.cpp bf16 is 1.0× honest `bf16mm`, with 0 excess flips.
+
+**llama.cpp f32, decomposed on both Linux CPUs:**
+
+| Configuration | × honest fp32 |
+|---|---|
+| default (flash "auto" = on, KV f16) | about 1,070× |
+| KV f32, flash on | about 1,070× |
+| flash off, KV f16 | about 590× |
+| **flash off, KV f32** | **1.0×, 0 flips** |
+
+- **On M4 Metal:** about 690× honest. It flips at the step with the smallest exact margin (wikitext-12, step 24, margin 6e-5), and that flip is still excess.
+- **q8_0:** 150–168 flips against the bf16 exact model. This needs the exact Q8_0 model before quantization can be separated from arithmetic error.
+- **Our float64 decoder:** on x86-64 and ARM64 it reproduces all 93 certified traces, with logits within 6.5e-13.
+
+**Local sweep.** The watchdog stopped the M4 sweep twice when free disk fell below 900 MB, both times because of other sessions. Still to run on the M4:
+- the MPS fp32 rerun;
+- MLX-CPU bf16;
+- llama.cpp bf16, q8_0 and the flash-off variants on CPU and Metal;
+- all fp16 variants.
+
 ### All 93 SmolLM2-135M traces certified (evening)
 
 **Where it ran.** 4 private Kaggle CPU kernels (`rifatsarwarcodes/nq1-certify-smollm2-135m-{0..3}`), each running 4 workers at repo commit `9b7e7db`. No GPU quota was used. Each kernel took about 37 minutes. Two traces (gsm8k-1, gsm8k-3) were certified on the M4.
