@@ -16,7 +16,7 @@ class LlamaCppBackend:
         self.name = f"llamacpp-{device}-{wtype}" + ("" if kv == "f16" else f"-kv{kv}") + \
                     ("" if flash == "auto" else f"-fa{flash}")
         gguf = Path(gguf_dir) / f"{tag}-{wtype}.gguf"
-        drv = Path(driver) if driver else DRIVER
+        drv = (Path(driver) if driver else DRIVER).resolve()
         ngl = "99" if device == "metal" else "0"
         off = "1" if device == "metal" else "0"
         self.p = subprocess.Popen([str(drv), str(gguf), ngl, str(threads), kv, flash, off],
