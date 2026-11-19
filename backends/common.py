@@ -54,19 +54,24 @@ def run(backend, prompts, ref_dir: Path, out_path: Path, n_new: int, model_dir: 
         # ---- free-running greedy
         backend.reset()
         lg = backend.start(ids)
-        free = []
+        free, free_lg = [], []
         for t in range(n_new):
+            free_lg.append(np.asarray(lg, dtype=np.float64))
             nxt = int(np.argmax(lg))
             free.append(nxt)
             if t + 1 < n_new:
                 lg = backend.step(nxt)
         fd = next((i for i, (a, b) in enumerate(zip(free, gen)) if a != b), n_new)
-        # ---- teacher-forced decode along the exact trace
-        backend.reset()
-        lg = backend.start(ids)
+        # ---- teacher-forced decode along the exact trace.
+        # If the free run never diverged it already fed exactly the exact tokens, so its logits
+        # ARE the teacher-forced decode-path logits (same calls, same order); reuse them.
+        reuse = fd == n_new
+        if not reuse:
+            backend.reset()
+            lg = backend.start(ids)
         steps = []
         for t in range(n_new):
-            Lb = np.asarray(lg, dtype=np.float64)
+            Lb = free_lg[t] if reuse else np.asarray(lg, dtype=np.float64)
             lr = Lr[t]
             i1 = int(gen[t])
             lr_o = lr.copy(); lr_o[i1] = -np.inf
@@ -84,9 +89,9 @@ def run(backend, prompts, ref_dir: Path, out_path: Path, n_new: int, model_dir: 
                 err_dir=float((Lb[i1] - Lb[i2]) - (lr[i1] - lr[i2])),
                 flip=bool(b1 != i1),
             ))
-            if t + 1 < n_new:
+            if t + 1 < n_new and not reuse:
                 lg = backend.step(i1)
-        rows.append(dict(id=pid, free=free, first_div=fd, steps=steps))
+        rows.append(dict(id=pid, free=free, first_div=fd, tf_reused_free=reuse, steps=steps))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(dict(backend=backend.name, meta=getattr(backend, "meta", {}),
                                         n_new=n_new, seconds=time.time() - t0, rows=rows)))
