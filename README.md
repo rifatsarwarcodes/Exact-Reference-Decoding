@@ -1,9 +1,10 @@
 # Exact-reference LLM decoding: which greedy flips are legitimate?
 
 **Status (2026-11-19):**
-- The certified reference pipeline works. Arb ball arithmetic certifies SmolLM2-135M greedy steps with logit radius ≤ 1e-11.
-- All three backend families (PyTorch, MLX, llama.cpp) run end to end.
-- Full certification of the 93-prompt set is in progress.
+- **All 93 SmolLM2-135M greedy traces are certified:** 5,952/5,952 steps, with margins enclosed to within 3e-11 ([data/ref/](data/ref/)).
+- **Honest-precision ensembles** are done for fp32, fp16, bf16 and bf16mm. Honest fp32 never flips on this set.
+- **llama.cpp's default f32 has about 700× excess error.** The causes are the CPU flash-attention path and the f16 KV cache.
+- **The Apple backend sweep and the full x86-64/ARM64 CI run are in progress.**
 - Details are in [docs/research-log.md](docs/research-log.md) and [docs/methodology.md](docs/methodology.md).
 **Idea ID:** NQ1 in [../reports/Low resource CS and robotics prospects.md](../reports/Low%20resource%20CS%20and%20robotics%20prospects.md), pick #5. P 4, F 4.5, 6–8 weeks.
 **Background notes:** [../research_notes/Low resource CS and robotics prospects/numerics_quantum_verification.md](../research_notes/Low%20resource%20CS%20and%20robotics%20prospects/numerics_quantum_verification.md), card NQ1.

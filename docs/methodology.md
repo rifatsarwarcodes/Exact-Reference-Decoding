@@ -45,7 +45,13 @@ The exact greedy trace takes the argmax of the exact logits at every step. It is
 - **A3:** converting bf16 to float64 with torch is exact. This is true by construction: bf16 is a truncated binary32.
 - No libm function is trusted. The fp64 ball path implements `exp` itself (range reduction plus Taylor remainder), and Arb provides its own.
 
-**Validation.** Over a 16-token test sequence, the Arb midpoints agree with our float64 decoder to 1.4e-13 in logits. All 4 decision steps certified, with a logit radius ≤ 1.3e-11.
+**Full run, SmolLM2-135M, 93 prompts × 64 steps.**
+- **All 5,952 steps certified**, with logit radius ≤ 1.5e-11 and each margin enclosure at most 3.0e-11 wide.
+- The smallest exact margin is 5.54e-5.
+- Our float64 decoder is within 7.7e-13 of exact at every step.
+- 91 of the traces were certified on x86-64 (Kaggle, OpenBLAS) and 2 on the M4 (Accelerate).
+
+**Earlier validation.** Over a 16-token test sequence, the Arb midpoints agree with our float64 decoder to 1.4e-13 in logits. All 4 decision steps certified, with a logit radius ≤ 1.3e-11.
 
 ## 3. Negative result: fp64 interval bounds do not work
 

@@ -56,6 +56,23 @@ Full text of 2611.13730 and 2609.26621, abstracts of about 25 more, and about 16
   - torch 2.15.0, transformers 5.23.0, mlx 0.32.4, mlx-lm 0.32.2;
   - numpy 2.4.6, python-flint 0.9.0, safetensors 0.8.0.
 
+### All 93 SmolLM2-135M traces certified (evening)
+
+**Where it ran.** 4 private Kaggle CPU kernels (`rifatsarwarcodes/nq1-certify-smollm2-135m-{0..3}`), each running 4 workers at repo commit `9b7e7db`. No GPU quota was used. Each kernel took about 37 minutes. Two traces (gsm8k-1, gsm8k-3) were certified on the M4.
+
+**Result.** **5,952 / 5,952 steps certified; all 93 certified prefixes are the full 64 steps.**
+- **Exact margins:** the minimum is 5.54e-5. Each margin enclosure is at most 3.0e-11 wide, and the logit radius is at most 1.5e-11.
+- **Small margins:** 28 steps have an exact margin below 1e-2, and 2 are below 1e-3.
+- **Our float64 traces vs exact:** at most 7.7e-13, median 7.1e-14. Backend metrics computed against the fp64 candidates are therefore exact to about 1e-12.
+
+**Dataset.** `data/ref/smollm2-135m/` now holds the certified traces. Stats: `results/certification_smollm2-135m_v1.json`.
+
+**Platforms.** The Kaggle runs used x86-64 with OpenBLAS for the fp64 lm_head ball step. Assumption A1 (no Strassen) also holds for OpenBLAS dgemm.
+
+**Reproducibility.** The GGUF files (f32, bf16, q8_0) are byte-identical on the M4, x86-64 CI and ARM64 CI.
+
+**Disk.** The disk filled again in the evening, mostly from other sessions; one session's temp folder alone was 1.2 GB. The watchdog stopped the local sweep at 819 MB free. Only regenerable project files were deleted (the f32 GGUF, duplicate certificate copies).
+
 ### Linux CI smoke runs and the llama.cpp ablation (afternoon)
 
 **CI smoke run** (`ci-n3-smoke3`): 3 prompts × 64 steps, on AMD EPYC 7763 (x86-64) and Neoverse-N2 (ARM64). The two architectures agree closely.
