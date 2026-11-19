@@ -42,7 +42,11 @@ for name in a.backends:
         be = NumpyBackend(a.model)
     elif fam == "llamacpp":
         from backends.llamacpp_backend import LlamaCppBackend
-        kw = dict(kv=name.split("-kv")[1].split("-")[0]) if "-kv" in name else {}
+        kw = {}
+        if "-kv" in name:
+            kw["kv"] = name.split("-kv")[1].split("-")[0]
+        if "-fa" in name:
+            kw["flash"] = name.split("-fa")[1].split("-")[0]
         be = LlamaCppBackend(a.tag, device=dev, wtype=dt, driver=a.driver, gguf_dir=a.gguf_dir, **kw)
     else:
         raise SystemExit(name)
