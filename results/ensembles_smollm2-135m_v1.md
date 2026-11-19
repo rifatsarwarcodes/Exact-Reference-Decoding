@@ -9,6 +9,7 @@ The reference traces are fp64 candidates, which agree with exact to about 1e-13.
 | fp32 | 47,616 | 0 | 0 / 5,952 | 1.21e-05 | 8.65e-06 |
 | fp16 | 47,616 | 74 | 27 / 5,952 | 3.33e-02 | 2.73e-02 |
 | bf16 | 47,616 | 741 | 195 / 5,952 | 2.65e-01 | 2.13e-01 |
+| bf16mm (ggml-style: bf16 matmul inputs, f32 elsewhere; run `ens-m8-pbf16mm-v2`) | 47,616 | 156 | — | 1.03e-01 | 6.65e-02 |
 
 **Exact top-1/top-2 margins over the 5,952 steps:**
 - minimum 5.54e-05;
