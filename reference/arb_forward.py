@@ -37,8 +37,6 @@ def _from_rows(rows: list[list[arb]]) -> arb_mat:
 
 class ArbModel:
     def __init__(self, fm: Fp64Model, prec=(40, 6)):
-        if fm.qk_norm:
-            raise NotImplementedError("qk-norm (Qwen3) not yet supported in Arb path")
         self.fm = fm
         self.prec = prec
         self.eps = fm.eps
@@ -124,8 +122,17 @@ class ArbModel:
             Oall = []
             for si, T in enumerate(Ts):
                 QKV = QKVall[offs[si]:offs[si + 1]]
-                Q = [[rope(QKV[t][h * hd:(h + 1) * hd], t) for h in range(nh)] for t in range(T)]
-                K = [[rope(QKV[t][nq + h * hd: nq + (h + 1) * hd], t) for h in range(nkv)] for t in range(T)]
+                if fm.qk_norm:   # Qwen3: per-head RMSNorm (with gain) on q and k before RoPE
+                    gq = [arb(float(v)) for v in fm.w[f"model.layers.{l}.self_attn.q_norm.weight"]]
+                    gk = [arb(float(v)) for v in fm.w[f"model.layers.{l}.self_attn.k_norm.weight"]]
+                    def qkn(vec, g):
+                        r = self._rs([vec])[0]
+                        return [v * r * gi for v, gi in zip(vec, g)]
+                else:
+                    qkn = lambda vec, g: vec
+                    gq = gk = None
+                Q = [[rope(qkn(QKV[t][h * hd:(h + 1) * hd], gq), t) for h in range(nh)] for t in range(T)]
+                K = [[rope(qkn(QKV[t][nq + h * hd: nq + (h + 1) * hd], gk), t) for h in range(nkv)] for t in range(T)]
                 Vv = [[QKV[t][nq + nk + h * hd: nq + nk + (h + 1) * hd] for h in range(nkv)] for t in range(T)]
                 O = [[None] * nh for _ in range(T)]
                 for h in range(nh):
