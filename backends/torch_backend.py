@@ -25,7 +25,7 @@ class TorchBackend:
         out = self.model(input_ids=torch.tensor([ids], device=self.dev),
                          past_key_values=self.cache, use_cache=True)
         self.cache = out.past_key_values
-        return out.logits[0, -1].to(torch.float64).cpu().numpy()
+        return out.logits[0, -1].cpu().to(torch.float64).numpy()   # move first: MPS has no float64
 
     def start(self, ids):
         return self._fwd(list(ids))
