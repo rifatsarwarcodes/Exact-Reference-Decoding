@@ -92,7 +92,7 @@ jobs:
           python scripts/make_fp64_ref.py --out results/raw/ref/smollm2-135m/fp64-${{ matrix.runner }} \
                  --limit ${LIMIT} 2>&1 | tee logs/fp64.log
           python scripts/compare_refs.py data/ref/smollm2-135m results/raw/ref/smollm2-135m/fp64-${{ matrix.runner }} \
-                 | tee -a $GITHUB_STEP_SUMMARY
+                 | tee -a logs/compare.log $GITHUB_STEP_SUMMARY
 
       - name: Summarise
         continue-on-error: true

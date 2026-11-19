@@ -1,0 +1,57 @@
+# Honest-precision ensembles (random summation order) on GitHub-hosted x86-64 runners.
+# Trigger: push a tag `ens-*` (optionally `ens-m<K>-*` for K members). Results are pushed to
+# branches `ens-results/<tag>-<run>/<shard>`.
+name: ensembles
+
+on:
+  push:
+    tags: ["ens-*"]
+
+permissions:
+  contents: write
+
+env:
+  MODEL_REV: 93efa2f097d58c2a74874c7e644dbc9b0cee75a2
+  SHARDS: 12
+
+jobs:
+  run:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.15.0
+          pip install -r requirements-ci.txt
+      - name: Members from tag
+        run: |
+          M=8; if [[ "${GITHUB_REF_NAME}" =~ ^ens-m([0-9]+)- ]]; then M=${BASH_REMATCH[1]}; fi
+          echo "MEMBERS=$M" >> $GITHUB_ENV
+      - name: Download model
+        run: python -c "from huggingface_hub import snapshot_download; snapshot_download('HuggingFaceTB/SmolLM2-135M', revision='${MODEL_REV}', local_dir='models/SmolLM2-135M', allow_patterns=['*.json','*.safetensors','*.txt'])"
+      - name: Run ensembles
+        continue-on-error: true
+        run: |
+          set -o pipefail; mkdir -p logs
+          IDS=$(python -c "import glob,os; ids=sorted(os.path.basename(p)[:-4] for p in glob.glob('data/ref/smollm2-135m/*.npz')); print(' '.join(ids[${{ matrix.shard }}::${SHARDS}]))")
+          python scripts/run_ensemble.py --profiles fp32 bf16 fp16 --members ${MEMBERS} --ids $IDS \
+                 --out ens 2>&1 | tee logs/ensemble-${{ matrix.shard }}.log
+      - name: Push results
+        if: always()
+        run: |
+          B="ens-results/${GITHUB_REF_NAME}-${GITHUB_RUN_ID}/${{ matrix.shard }}"
+          mkdir -p /tmp/out && cp -r ens logs /tmp/out/ 2>/dev/null; lscpu > /tmp/out/cpuinfo.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan results-tmp && git rm -rq --cached . && git clean -fdq
+          cp -r /tmp/out/* . ; for f in ens logs cpuinfo.txt; do [ -e "$f" ] && git add -f "$f"; done
+          git commit -qm "chore(ci): ensemble results shard ${{ matrix.shard }}"
+          git push origin "HEAD:refs/heads/$B"
