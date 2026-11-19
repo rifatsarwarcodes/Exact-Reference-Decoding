@@ -1,0 +1,7 @@
+bf16mm gsm8k-34 50s flips/member=0.75
+bf16mm gsm8k-6 50s flips/member=0.62
+bf16mm gsm8k-82 49s flips/member=0.00
+bf16mm wikitext-11 50s flips/member=0.00
+bf16mm wikitext-22 50s flips/member=0.38
+bf16mm wikitext-33 50s flips/member=0.62
+bf16mm wikitext-44 50s flips/member=0.00
