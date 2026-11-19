@@ -27,10 +27,12 @@ ap.add_argument("--n_new", type=int, default=64)
 ap.add_argument("--batch", type=int, default=4)
 ap.add_argument("--target", type=float, default=40)
 ap.add_argument("--per_layer", type=float, default=6)
+ap.add_argument("--src", default=None, help="dir of candidate traces (npz with gen, hidden, prompt)")
+ap.add_argument("--dst", default=None)
 a = ap.parse_args()
 
-src = Path(f"results/raw/ref/{a.tag}/fp64")
-dst = Path(f"results/raw/ref/{a.tag}/cert"); dst.mkdir(parents=True, exist_ok=True)
+src = Path(a.src or f"results/raw/ref/{a.tag}/fp64")
+dst = Path(a.dst or f"results/raw/ref/{a.tag}/cert"); dst.mkdir(parents=True, exist_ok=True)
 prompts = json.load(open(a.prompts))
 if a.ids:
     prompts = [p for p in prompts if p["id"] in set(a.ids)]
