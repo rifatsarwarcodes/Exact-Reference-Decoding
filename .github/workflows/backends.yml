@@ -1,15 +1,22 @@
 # Run CPU backends on GitHub-hosted x86-64 and ARM64 Linux runners against the committed
-# reference traces (data/ref/). Manual trigger only, to save runner minutes.
+# reference traces (data/ref/). Triggered manually or by pushing a tag `ci-*`.
+# Each matrix job pushes its results to branch `ci-results/<tag-or-run>/<runner>`.
 name: backends-linux
 
 on:
+  push:
+    tags: ["ci-*"]
   workflow_dispatch:
     inputs:
       limit:
         description: "number of prompts (0 = all)"
         default: "0"
 
+permissions:
+  contents: write
+
 env:
+  LIMIT: ${{ inputs.limit || '0' }}
   MODEL_REV: 93efa2f097d58c2a74874c7e644dbc9b0cee75a2   # HuggingFaceTB/SmolLM2-135M
   LLAMA_CPP_COMMIT: 620d2225cc436ab0b001e3200e590e3b286ef9ab
 
@@ -66,7 +73,7 @@ jobs:
 
       - name: Run backends
         run: |
-          python scripts/run_backends.py --ref data/ref/smollm2-135m --limit ${{ inputs.limit }} \
+          python scripts/run_backends.py --ref data/ref/smollm2-135m --limit ${LIMIT} \
                  --driver ./llamacpp_driver \
                  --backends torch-cpu-fp32 torch-cpu-bf16 llamacpp-cpu-f32 llamacpp-cpu-f32-kvf32 \
                             llamacpp-cpu-bf16 llamacpp-cpu-q8_0
@@ -74,12 +81,23 @@ jobs:
       - name: fp64 numpy reference on this CPU
         run: |
           python scripts/make_fp64_ref.py --out results/raw/ref/smollm2-135m/fp64-${{ matrix.runner }} \
-                 --limit ${{ inputs.limit }}
+                 --limit ${LIMIT}
           python scripts/compare_refs.py data/ref/smollm2-135m results/raw/ref/smollm2-135m/fp64-${{ matrix.runner }} \
                  | tee -a $GITHUB_STEP_SUMMARY
 
       - name: Summarise
         run: python scripts/summarize.py results/raw/runs/smollm2-135m/smollm2-135m | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Push results to a branch
+        run: |
+          B="ci-results/${GITHUB_REF_NAME//\//-}-${GITHUB_RUN_ID}/${{ matrix.runner }}"
+          mkdir -p /tmp/out && cp -r results/raw/runs cpuinfo.txt gguf.sha256 /tmp/out/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan results-tmp && git rm -rq --cached . && git clean -fdq -e /tmp
+          cp -r /tmp/out/* . && git add -f runs cpuinfo.txt gguf.sha256
+          git commit -qm "chore(ci): backend results for ${{ matrix.runner }}"
+          git push origin "HEAD:refs/heads/$B"
 
       - uses: actions/upload-artifact@v4
         with:
