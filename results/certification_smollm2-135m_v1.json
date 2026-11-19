@@ -1,0 +1,13 @@
+{
+ "traces": 93,
+ "steps": 5952,
+ "certified_steps": 5952,
+ "full_prefix": 93,
+ "min_margin_lo": 5.539466484342219e-05,
+ "max_margin_enclosure_width": 2.97717406283482e-11,
+ "max_logit_rad": 1.533192044901211e-11,
+ "max_fp64_err_inf": 7.709388682997087e-13,
+ "median_fp64_err_inf": 7.105427357601002e-14,
+ "steps_exact_margin_below_1e-3": 2,
+ "steps_exact_margin_below_1e-2": 28
+}
