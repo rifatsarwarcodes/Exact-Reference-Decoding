@@ -1,0 +1,8 @@
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 2936.39it/s]
+torch-cpu-fp32           prompts=3 tf-flips=0/192 free-diverged=0/3
+Loading weights:   0%|          | 0/272 [00:00<?, ?it/s]Loading weights: 100%|██████████| 272/272 [00:00<00:00, 3806.08it/s]
+torch-cpu-bf16           prompts=3 tf-flips=8/192 free-diverged=3/3
+llamacpp-cpu-f32         prompts=3 tf-flips=1/192 free-diverged=1/3
+llamacpp-cpu-f32-kvf32   prompts=3 tf-flips=1/192 free-diverged=1/3
+llamacpp-cpu-bf16        prompts=3 tf-flips=1/192 free-diverged=1/3
+llamacpp-cpu-q8_0        prompts=3 tf-flips=5/192 free-diverged=3/3
