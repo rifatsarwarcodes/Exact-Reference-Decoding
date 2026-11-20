@@ -4,6 +4,48 @@ Newest entries first. Each entry records what was done, what was found, and what
 
 ---
 
+## 2026-11-21: Apple sweep resumed; Metal f32 matmul uses fp16 tiles; HF "fp64" is mixed
+
+**Sweep.** Restarted at 02:30 under `caffeinate`, after the user freed disk (9.2 GB free). The 11 finished backends were skipped. The earlier log is kept as `results/logs/sweep_local_2026-11-19.log`.
+
+**Honest fp32.** torch-mps-fp32 (rerun after the MPS float64 fix): 0 flips, 1.5× honest fp32.
+
+**bf16 and fp16, all flips legitimate:**
+
+| Backend | Flips | Excess | Error vs honest |
+|---|---|---|---|
+| mlx-cpu-bf16 | 104 | — | — |
+| llamacpp-cpu-bf16 | 20 | 0 | 0.9× `bf16mm` |
+| llamacpp-metal-bf16 | 8 | 0 | 0.4× `bf16mm` |
+| torch-mps-fp16 | 8 | 0 | 1.1× fp16 |
+| mlx-gpu-fp16 | 8 | 0 | 1.1× fp16 |
+| torch-cpu-fp16 | 6 | 0 | 1.1× fp16 |
+
+- mlx-gpu-fp16 and torch-mps-fp16 share only 4 of their 8 flip steps. Two honest implementations, two different sets of legitimate flips.
+- At 0.4×, `bf16mm` is a conservative profile for Metal: Metal has less error than the scheme assumes.
+
+**q8_0.** 154 flips on CPU, 104 on Metal. Not classifiable until the Q8_0 exact model is certified. The CPU/Metal gap is probably the CPU q8_0 dot product quantising activations to 8 bits; not yet checked in source.
+
+**torch-cpu-fp64 is not fp64.** 0 flips, but median error 5.0e-6 against the certified reference. HF `modeling_llama.py` forces float32 in RMSNorm (l. 63), RoPE frequencies (l. 111) and softmax (l. 197). Report it as mixed fp64/fp32, never as a reference. Our reference (own float64 decoder plus Arb) is unaffected. **To check:** the honest fp32/bf16 profiles must match these forced fp32 steps for torch's 1.1–1.5× to be a fair comparison.
+
+**llama.cpp f32 decomposition on the M4** (× honest fp32):
+
+| Configuration | CPU | Metal |
+|---|---|---|
+| default (flash on, KV f16) | 1,288× | 689× |
+| KV f32, flash on | 1,288× | 689× |
+| flash off, KV f16 | 930× | 589× |
+| **flash off, KV f32** | **1.7×, 0 flips** | **409×, 2 excess flips** |
+
+- On the M4 CPU, as on x86-64 and ARM64, both settings must change to get honest fp32.
+- **Metal never reaches honest fp32 with any user setting.**
+- **Cause, from source at `620d2225cc`:** `kernel_mul_mm_f32_f32` (`ggml/src/ggml-metal/kernels/mul_mm.metal:953`) is instantiated with `SA = SB = half` and `simdgroup_half8x8` tiles, accumulating in float. Multi-token matmuls (the prompt) round both weights and activations to fp16.
+- **This fits the measurements.** Prompt-step error is 1.0e-2 with no cache involved. Generation steps are 4.9e-3: they use the f32 `mul_mv` path but read prompt K/V built with fp16 tiles.
+- **Flips:** wikitext-12 step 24 (exact margin 5.5e-5) and wikitext-19 step 24 (1.3e-3).
+- **Not yet checked:** that the installed llama.cpp binary is built from `620d2225cc`, and the exact `mul_mm` dispatch threshold.
+
+---
+
 ## 2026-11-19 (b): Reference pipeline built; first certified steps; backends run end to end
 
 ### Novelty re-check
